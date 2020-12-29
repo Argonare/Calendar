@@ -10,9 +10,9 @@ public class WriteToFIle {
 
     }
     public String read() throws IOException {
-        File file=new File("config.config");
+        File file=new File("config.json");
         if (file.exists()) {
-            FileInputStream fileInputStream = new FileInputStream("config.config");
+            FileInputStream fileInputStream = new FileInputStream("config.json");
             InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "UTF-8");
             BufferedReader reader = new BufferedReader(inputStreamReader);
             String tempString = "";
@@ -30,7 +30,7 @@ public class WriteToFIle {
         }
     }
     public void save(String str) throws IOException {
-        BufferedWriter out = new BufferedWriter(new FileWriter("config.config"));
+        BufferedWriter out = new BufferedWriter(new FileWriter("config.json"));
         out.write(str);
         out.close();
     }
