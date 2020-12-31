@@ -87,6 +87,22 @@ public class CalendarChild extends JFrame {
                     for (int i = 0; i < row; i++) {
                         String time = (String) table1.getValueAt(i, 0);
                         String content = (String) table1.getValueAt(i, 1);
+                        try{
+                            int len=time.split(":").length;
+                            if(len!=2){
+                                JOptionPane.showMessageDialog(null, "日期格式错误，应为xx:xx", "", JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
+                            int hour=Integer.parseInt(time.split(":")[0]);
+                            int minutes=Integer.parseInt(time.split(":")[1]);
+                        }catch (NumberFormatException ne){
+                            JOptionPane.showMessageDialog(null, "日期格式错误，应为xx:xx", "", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                        if (content==null||content.trim().equals("")){
+                            JOptionPane.showMessageDialog(null, "内容不得为空", "", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
                         map.put(time, content);
                     }
                     try {

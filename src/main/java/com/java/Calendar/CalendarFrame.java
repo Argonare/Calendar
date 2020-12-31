@@ -17,20 +17,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 class CalendarFrame extends JFrame implements ActionListener {
-    JLabel labelDay[] = new JLabel[42],titleName[] = new JLabel[7];
+    LunarDate nongli= new LunarDate();
+    JLabel labelDay[] = new JLabel[42], titleName[] = new JLabel[7];
     JTextField text = new JTextField(10);
     JPanel pCenter = new JPanel();
     String name[] = {"日", "一", "二", "三", "四", "五", "六"};
-    JButton button,nextMonth, previousMonth,save=new JButton("编辑"),but[] = new JButton[42];
+    JButton button, nextMonth, previousMonth, save = new JButton("编辑"), but[] = new JButton[42];
     CalendarBean calendar;
     Calendar calendars = Calendar.getInstance();
     int year = calendars.get(Calendar.YEAR), month = calendars.get(Calendar.MONTH) + 1;
-    JLabel lbl1 = new JLabel("请输入年份："),lbl2 = new JLabel("      "),showMessage = new JLabel("", JLabel.CENTER);
+    JLabel lbl1 = new JLabel("请输入年份："), lbl2 = new JLabel("      "), showMessage = new JLabel("", JLabel.CENTER);
     JTextArea scheduletext = new JTextArea();
 
-    Map<String, String> data=null;
-    WriteToFIle writer=new WriteToFIle();
-    String last_clicked_date="";
+    Map<String, String> data = null;
+    WriteToFIle writer = new WriteToFIle();
+    String last_clicked_date = "";
 
     public CalendarFrame() throws IOException {
         JPanel pNorth = new JPanel(), pSouth = new JPanel(), pRight = new JPanel();
@@ -42,16 +43,16 @@ class CalendarFrame extends JFrame implements ActionListener {
         button.addActionListener(this);
 
         JLabel scheduleLabel = new JLabel("日程安排");
-        JScrollPane jsp=new JScrollPane(scheduletext);
+        JScrollPane jsp = new JScrollPane(scheduletext);
         jsp.setViewportView(scheduletext);
-        jsp.setPreferredSize(new Dimension(180,240));
+        jsp.setPreferredSize(new Dimension(180, 240));
         JPanel jp = new JPanel();
         jp.setLayout(new BorderLayout(0, 0));
         jp.add(scheduleLabel, BorderLayout.NORTH);
         scheduletext.setEnabled(false);
         scheduletext.setDisabledTextColor(Color.BLACK);
-        jp.add(save,BorderLayout.SOUTH);
-        jp.add(jsp,BorderLayout.CENTER);
+        jp.add(save, BorderLayout.SOUTH);
+        jp.add(jsp, BorderLayout.CENTER);
         pRight.add(jp);
         pNorth.add(showMessage);
         pNorth.add(lbl2);
@@ -68,7 +69,7 @@ class CalendarFrame extends JFrame implements ActionListener {
         String day[] = calendar.getCalendar();
         resetPanel(day, pCenter);
         showMessage.setText("日历：" + calendar.getYear() + "年"
-                + calendar.getMonth() + "月");
+                + calendar.getMonth() + "月"+'/'+nongli.cyclical(year)+'('+nongli.AnimalsYear(year)+')'+"年"+nongli.nStr1[month]+"月");
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.add(pCenter);
         add(scrollPane, BorderLayout.CENTER);
@@ -76,23 +77,25 @@ class CalendarFrame extends JFrame implements ActionListener {
         add(pSouth, BorderLayout.SOUTH);
         add(pRight, BorderLayout.EAST);
         loadData();
-        last_clicked_date=year+"-"+month+"-"+calendars.get(Calendar.DATE);
+        last_clicked_date = year + "-" + month + "-" + calendars.get(Calendar.DATE);
         save.addActionListener(e -> {
-            String s=data.get(last_clicked_date);
-            CalendarChild c= new CalendarChild(s,this);
+            String s = data.get(last_clicked_date);
+            CalendarChild c = new CalendarChild(s, this);
             c.setVisible(true);
         });
     }
-/**
- * 加载数据
- **/
+
+    /**
+     * 加载数据
+     **/
     public void loadData() throws IOException {
-        String s=writer.read();
+        String s = writer.read();
         if (s.equals(""))
-            data=new HashMap<>();
+            data = new HashMap<>();
         else
-            data=JSONObject.parseObject(writer.read(),new TypeReference<Map<String,String>>(){});
+            data = JSONObject.parseObject(writer.read(), new TypeReference<Map<String, String>>() {});
     }
+
     /*
     刷新日历
      */
@@ -101,68 +104,91 @@ class CalendarFrame extends JFrame implements ActionListener {
         pCenter.repaint();
         int labelCount = 0;
         int butCount = 0;
+        String nday = null;
         for (int i = 0; i < 7; i++) {
             titleName[i] = new JLabel(name[i]);
             titleName[i].setHorizontalAlignment(SwingConstants.CENTER);
             pCenter.add(titleName[i]);
         }
+
         for (int i = 0; i < 42; i++) {
-            if (day[i] == null
-                    || (Integer.parseInt(day[i]) < calendars.get(Calendar.DATE) && this.month == calendars
-                    .get(Calendar.MONTH) + 1)) {
+            if (day[i] == null ||
+                    (this.year == calendars.get(Calendar.YEAR) && this.month == calendars.get(Calendar.MONTH) + 1 && Integer.parseInt(day[i]) < calendars.get(Calendar.DATE)) ||//日期对的上
+                    this.year < calendars.get(Calendar.YEAR) ||//年分对的上
+                    (this.year == calendars.get(Calendar.YEAR) && this.month < calendars.get(Calendar.MONTH) + 1))//月份对的上
+            {
                 labelDay[labelCount] = new JLabel("", JLabel.CENTER);
-                labelDay[labelCount].setText(day[i]);
+
+                //农历
+                if (day[i]!=null){
+                    nday= nongli.oneDay(year,month, Integer.parseInt(day[i]));
+
+                    //添加日期
+                    labelDay[labelCount].setText(day[i]+"/"+nday);
+
+
+                }
                 pCenter.add(labelDay[labelCount]);
                 labelCount++;
             } else {
                 but[butCount] = new JButton("");
-                but[butCount].setText(day[i]);
+                if (day[i]!=null){
+                    nday= nongli.oneDay(year,month, Integer.parseInt(day[i]));
+
+                    //添加日期
+                    but[butCount].setText(day[i]+"/"+nday);
+                }
                 pCenter.add(but[butCount]);
                 butCount++;
             }
         }
         for (int i = 0; i < butCount; i++) {
-            but[i].addMouseListener(new EL1(Integer.parseInt(but[i].getText()),this));
-
+            String nbut=but[i].getText();
+            String substring = nbut.substring(0, nbut.indexOf('/'));
+            but[i].addMouseListener(new EL1(Integer.parseInt(substring), this));
         }
     }
+
     /*
     日历点击事件
      */
     class EL1 extends MouseAdapter {
         int day;
         CalendarFrame frame;
+
         public EL1(int day, CalendarFrame calendarFrame) {
             this.day = day;
-            this.frame=calendarFrame;
+            this.frame = calendarFrame;
         }
+
         public void mouseClicked(MouseEvent e) {
             String outStr = "";
             if (e.getButton() == MouseEvent.BUTTON1) {
-                last_clicked_date=(year+"-"+month+"-"+day);
-                JSONObject mp= JSONObject.parseObject(data.get(year+"-"+month+"-"+day));
-                String out="";
-                if (mp!=null)
-                for(Map.Entry<String, Object> entry : mp.entrySet()){
-                    String mapKey = entry.getKey();
-                    String mapValue = (String) entry.getValue();
-                    out+=mapKey+"\n"+mapValue+"\n----------\n";
-                }
-                out+="";
+                last_clicked_date = (year + "-" + month + "-" + day);
+                JSONObject mp = JSONObject.parseObject(data.get(year + "-" + month + "-" + day));
+                String out = "";
+                if (mp != null)
+                    for (Map.Entry<String, Object> entry : mp.entrySet()) {
+                        String mapKey = entry.getKey();
+                        String mapValue = (String) entry.getValue();
+                        out += mapKey + "\n" + mapValue + "\n----------\n";
+                    }
+                out += "";
                 scheduletext.setText(out);
                 outStr = "左键";
             }
-            if(e.getClickCount() == 2){
-                String s=data.get(last_clicked_date);
-                CalendarChild c= new CalendarChild(s,frame);
+            if (e.getClickCount() == 2) {
+                String s = data.get(last_clicked_date);
+                CalendarChild c = new CalendarChild(s, frame);
                 c.setVisible(true);
             }
             System.out.println(outStr + day);
         }
     }
-/*
-上月下月和搜索年份
- */
+
+    /*
+    上月下月和搜索年份
+     */
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == nextMonth) {
             month = month + 1;
@@ -196,6 +222,7 @@ class CalendarFrame extends JFrame implements ActionListener {
             resetPanel(day, pCenter);
         }
         showMessage.setText("日历：" + calendar.getYear() + "年"
-                + calendar.getMonth() + "月");
+                + calendar.getMonth() + "月"+'/'+nongli.cyclical(year)+'('+nongli.AnimalsYear(year)+')'+"年"+nongli.nStr1[month]+"月");
+
     }
 }
