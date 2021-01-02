@@ -33,8 +33,7 @@ public class CalendarTimer extends TimerTask  {
                 }
             }).start();
             int f=JOptionPane.showConfirmDialog(null, key+"    "+value, "", JOptionPane.YES_OPTION);
-            if (f==JOptionPane.YES_OPTION){
-                System.out.println(key);
+            if (f==JOptionPane.YES_OPTION||f==JOptionPane.NO_OPTION){
                 player.close();
                 this.cancel();
             }

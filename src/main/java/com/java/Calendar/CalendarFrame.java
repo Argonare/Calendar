@@ -109,7 +109,7 @@ class CalendarFrame extends JFrame implements ActionListener {
                 try {
                     int hours = Integer.parseInt(key.split(":")[0]);
                     int minutes = Integer.parseInt(key.split(":")[1]);
-                    int dely=hours*60+minutes-calendars.get(Calendar.HOUR)*60-calendars.get(Calendar.MINUTE);
+                    int dely=hours*60+minutes-calendars.get(Calendar.HOUR_OF_DAY)*60-calendars.get(Calendar.MINUTE);
                     CalendarTimer t=new CalendarTimer(key,entry.getValue());
                     if (dely<60&&dely>0){
                         Date tms = new Date(System.currentTimeMillis());
@@ -258,6 +258,7 @@ class CalendarFrame extends JFrame implements ActionListener {
             month = month + 1;
             if (month > 12)
                 month = 1;
+            this.year=Integer.parseInt(text.getText());
             calendar.setYear(Integer.parseInt(text.getText()));
             String day[] = calendar.getCalendar();
             resetPanel(day, pCenter);
