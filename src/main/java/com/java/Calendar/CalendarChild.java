@@ -30,7 +30,6 @@ public class CalendarChild extends JFrame {
         this.father=father;
         this.map= (Map<String, String>) JSONObject.parse(map);
         initComponents();
-
     }
 
     private void initComponents() {
@@ -95,6 +94,10 @@ public class CalendarChild extends JFrame {
                             }
                             int hour=Integer.parseInt(time.split(":")[0]);
                             int minutes=Integer.parseInt(time.split(":")[1]);
+                            if(hour<0||hour>24||minutes<0||minutes>60){
+                                JOptionPane.showMessageDialog(null, "时间错误", "", JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
                         }catch (NumberFormatException ne){
                             JOptionPane.showMessageDialog(null, "日期格式错误，应为xx:xx", "", JOptionPane.ERROR_MESSAGE);
                             return;

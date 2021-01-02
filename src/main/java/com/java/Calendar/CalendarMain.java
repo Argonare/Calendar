@@ -14,5 +14,6 @@ public class CalendarMain {
         frame.setTitle("日历小程序");
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
     }
 }

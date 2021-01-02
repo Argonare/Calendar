@@ -1,8 +1,9 @@
 package com.java.Calendar;
 
-import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import javazoom.jl.player.Player;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,14 +11,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Timer;
 
 class CalendarFrame extends JFrame implements ActionListener {
-    LunarDate nongli= new LunarDate();
+    LunarDate nongli = new LunarDate();
     JLabel labelDay[] = new JLabel[42], titleName[] = new JLabel[7];
     JTextField text = new JTextField(10);
     JPanel pCenter = new JPanel();
@@ -69,7 +72,7 @@ class CalendarFrame extends JFrame implements ActionListener {
         String day[] = calendar.getCalendar();
         resetPanel(day, pCenter);
         showMessage.setText("日历：" + calendar.getYear() + "年"
-                + calendar.getMonth() + "月"+'/'+nongli.cyclical(year)+'('+nongli.AnimalsYear(year)+')'+"年"+nongli.nStr1[month]+"月");
+                + calendar.getMonth() + "月" + '/' + nongli.cyclical(year) + '(' + nongli.AnimalsYear(year) + ')' + "年" + nongli.nStr1[month] + "月");
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.add(pCenter);
         add(scrollPane, BorderLayout.CENTER);
@@ -93,7 +96,35 @@ class CalendarFrame extends JFrame implements ActionListener {
         if (s.equals(""))
             data = new HashMap<>();
         else
-            data = JSONObject.parseObject(writer.read(), new TypeReference<Map<String, String>>() {});
+            data = JSONObject.parseObject(writer.read(), new TypeReference<Map<String, String>>() {
+            });
+        Timer timer = new Timer();
+        String today = calendars.get(Calendar.YEAR) + "-" + (calendars.get(Calendar.MONTH) + 1) + "-" + calendars.get(Calendar.DATE);
+        Map<String, String> schedul = JSON.parseObject(data.get(today), new TypeReference<Map<String, String>>() {});
+        schedul=sortMapByKey(schedul);
+        for (Map.Entry<String, String> entry : schedul.entrySet()) {
+            String key = entry.getKey();
+            int len = key.split(":").length;
+            if (len == 2) {
+                try {
+                    int hours = Integer.parseInt(key.split(":")[0]);
+                    int minutes = Integer.parseInt(key.split(":")[1]);
+                    int dely=hours*60+minutes-calendars.get(Calendar.HOUR)*60-calendars.get(Calendar.MINUTE);
+                    CalendarTimer t=new CalendarTimer(key,entry.getValue());
+                    if (dely<60&&dely>0){
+                        Date tms = new Date(System.currentTimeMillis());
+                        timer.schedule(t,tms);
+                    }else if (dely>=60){
+                        SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                        Date tms = sdf.parse(today+" "+(hours-1)+":"+minutes+":00");
+                        timer.schedule(t,tms);
+                    }
+                } catch (NumberFormatException | ParseException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
     }
 
     /*
@@ -120,11 +151,11 @@ class CalendarFrame extends JFrame implements ActionListener {
                 labelDay[labelCount] = new JLabel("", JLabel.CENTER);
 
                 //农历
-                if (day[i]!=null){
-                    nday= nongli.oneDay(year,month, Integer.parseInt(day[i]));
+                if (day[i] != null) {
+                    nday = nongli.oneDay(year, month, Integer.parseInt(day[i]));
 
                     //添加日期
-                    labelDay[labelCount].setText(day[i]+"/"+nday);
+                    labelDay[labelCount].setText(day[i] + "/" + nday);
 
 
                 }
@@ -132,23 +163,36 @@ class CalendarFrame extends JFrame implements ActionListener {
                 labelCount++;
             } else {
                 but[butCount] = new JButton("");
-                if (day[i]!=null){
-                    nday= nongli.oneDay(year,month, Integer.parseInt(day[i]));
+                if (day[i] != null) {
+                    nday = nongli.oneDay(year, month, Integer.parseInt(day[i]));
 
                     //添加日期
-                    but[butCount].setText(day[i]+"/"+nday);
+                    but[butCount].setText(day[i] + "/" + nday);
                 }
                 pCenter.add(but[butCount]);
                 butCount++;
             }
         }
         for (int i = 0; i < butCount; i++) {
-            String nbut=but[i].getText();
+            String nbut = but[i].getText();
             String substring = nbut.substring(0, nbut.indexOf('/'));
             but[i].addMouseListener(new EL1(Integer.parseInt(substring), this));
         }
     }
-
+    public static Map<String, String> sortMapByKey(Map<String, String> map) {
+        if (map == null || map.isEmpty()) {
+            return new HashMap<>();
+        }
+        Map<String, String> sortMap = new TreeMap<String, String>(new MapKeyComparator());
+        sortMap.putAll(map);
+        return sortMap;
+    }
+    static class MapKeyComparator implements Comparator<String>{
+        @Override
+        public int compare(String str1, String str2) {
+            return str1.compareTo(str2);
+        }
+    }
     /*
     日历点击事件
      */
@@ -175,14 +219,12 @@ class CalendarFrame extends JFrame implements ActionListener {
                     }
                 out += "";
                 scheduletext.setText(out);
-                outStr = "左键";
             }
             if (e.getClickCount() == 2) {
                 String s = data.get(last_clicked_date);
                 CalendarChild c = new CalendarChild(s, frame);
                 c.setVisible(true);
             }
-            System.out.println(outStr + day);
         }
     }
 
@@ -213,7 +255,6 @@ class CalendarFrame extends JFrame implements ActionListener {
             resetPanel(day, pCenter);
         } else if (e.getSource() == button && text.getText() != null
                 && !text.getText().equals("")) {
-            System.out.println(text.getText());
             month = month + 1;
             if (month > 12)
                 month = 1;
@@ -222,7 +263,7 @@ class CalendarFrame extends JFrame implements ActionListener {
             resetPanel(day, pCenter);
         }
         showMessage.setText("日历：" + calendar.getYear() + "年"
-                + calendar.getMonth() + "月"+'/'+nongli.cyclical(year)+'('+nongli.AnimalsYear(year)+')'+"年"+nongli.nStr1[month]+"月");
+                + calendar.getMonth() + "月" + '/' + nongli.cyclical(year) + '(' + nongli.AnimalsYear(year) + ')' + "年" + nongli.nStr1[month] + "月");
 
     }
 }
